@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>エッジリード文面生成ツール</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700&family=Noto+Sans+JP:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #f3f5f7;
+    --panel: #ffffff;
+    --ink: #1e2530;
+    --ink-soft: #5a6472;
+    --line: #e1e5ea;
+    --accent: #0f6f6a;
+    --accent-soft: #e3f1ef;
+    --accent-ink: #0b524e;
+    --warn: #b5532c;
+    --warn-soft: #fbeae1;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap{ max-width: 1180px; margin: 0 auto; padding: 28px 20px 80px; }
+
+  header.top{
+    display:flex; align-items:baseline; justify-content:space-between; gap:16px;
+    margin-bottom: 22px; flex-wrap: wrap;
+  }
+  header.top h1{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-weight:700; font-size: 22px; letter-spacing: .02em; margin:0;
+    display:flex; align-items:center; gap:10px;
+  }
+  header.top h1 .mark{
+    display:inline-flex; align-items:center; justify-content:center;
+    width: 34px; height:34px; border-radius: 9px;
+    background: var(--accent); color:#fff; font-size:16px; font-weight:700;
+    font-family:'Zen Kaku Gothic New', sans-serif;
+  }
+  header.top .sub{ font-size:12.5px; color: var(--ink-soft); }
+
+  /* tabs */
+  .tabs{ display:flex; gap:6px; border-bottom: 1px solid var(--line); margin-bottom: 22px; }
+  .tab{
+    appearance:none; border:none; background:none; cursor:pointer;
+    padding: 11px 18px; font-size: 14px; font-weight:600; color: var(--ink-soft);
+    border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+    font-family:'Noto Sans JP', sans-serif;
+  }
+  .tab:hover{ color: var(--ink); }
+  .tab.active{ color: var(--accent-ink); border-bottom-color: var(--accent); }
+
+  .grid{
+    display:grid; grid-template-columns: 1.05fr 1fr; gap: 22px; align-items:start;
+  }
+  @media (max-width: 880px){ .grid{ grid-template-columns: 1fr; } }
+
+  .panel{
+    background: var(--panel); border:1px solid var(--line); border-radius: 14px;
+    padding: 22px; box-shadow: 0 1px 2px rgba(20,30,40,.03);
+  }
+  .panel h2{
+    font-family:'Zen Kaku Gothic New', sans-serif;
+    font-size: 14px; font-weight:700; margin: 0 0 14px; color: var(--ink);
+    display:flex; align-items:center; gap:8px;
+  }
+  .panel h2::before{
+    content:''; width:4px; height:14px; background: var(--accent); border-radius:2px; display:inline-block;
+  }
+
+  /* company chips */
+  .chip-grid{ display:flex; flex-wrap:wrap; gap:8px; margin-bottom: 20px; }
+  .chip{
+    appearance:none; cursor:pointer; border:1px solid var(--line); background:#fbfcfd;
+    color: var(--ink); font-size: 13px; font-weight:600; padding: 8px 14px;
+    border-radius: 999px; transition: all .12s; font-family:'Noto Sans JP', sans-serif;
+    white-space:nowrap;
+  }
+  .chip:hover{ border-color: var(--accent); color: var(--accent-ink); }
+  .chip.active{ background: var(--accent); border-color: var(--accent); color:#fff; }
+
+  .badge-note{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600;
+    color: var(--warn); background: var(--warn-soft); padding: 6px 10px; border-radius: 8px;
+    margin-bottom: 16px;
+  }
+  .badge-note--doc{
+    color: #0c6b91; background: #e3f3fa;
+  }
+  .sample-link{
+    display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:600;
+    color: var(--accent-ink); background: var(--accent-soft); padding: 6px 10px; border-radius: 8px;
+    margin-bottom: 16px; margin-left: 8px; text-decoration:none; cursor:pointer;
+  }
+  .sample-link:hover{ text-decoration: underline; }
+
+  .field{ margin-bottom: 14px; }
+  .field label{
+    display:block; font-size: 12.5px; font-weight:600; color: var(--ink-soft); margin-bottom: 5px;
+  }
+  .field label .opt{ font-weight:400; color:#9aa4b1; }
+  .field label .hint{ font-weight:700; color: var(--warn); font-size: 11.5px; margin-left: 2px; }
+  .field-note{
+    font-size: 11.5px; color: var(--warn); background: var(--warn-soft);
+    border-radius: 6px; padding: 6px 9px; margin-top: 6px; white-space: pre-line; line-height:1.5;
+  }
+  .field input{
+    width:100%; padding: 9px 11px; font-size: 14px; border: 1px solid var(--line);
+    border-radius: 8px; background: #fbfcfd; color: var(--ink);
+    font-family:'Noto Sans JP', sans-serif; transition: border-color .12s, background .12s;
+  }
+  .field input:focus{ outline:none; border-color: var(--accent); background:#fff; }
+  .field select{
+    width:100%; padding: 9px 11px; font-size: 14px; border: 1px solid var(--line);
+    border-radius: 8px; background: #fbfcfd; color: var(--ink);
+    font-family:'Noto Sans JP', sans-serif; transition: border-color .12s, background .12s;
+  }
+  .field select:focus{ outline:none; border-color: var(--accent); background:#fff; }
+  .check-group{
+    display:flex; flex-wrap:wrap; gap: 6px 14px; padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 8px; background:#fbfcfd;
+  }
+  .check-item{ display:flex; align-items:center; gap:6px; font-size: 13px; }
+  .check-item input{ width:auto; margin:0; }
+
+  .empty-state{
+    color: var(--ink-soft); font-size: 13.5px; padding: 30px 10px; text-align:center;
+    border: 1px dashed var(--line); border-radius: 10px; background:#fbfcfd;
+  }
+  .todo-state{
+    color: var(--warn); font-size: 13px; padding: 16px; border-radius:10px;
+    background: var(--warn-soft); margin-bottom: 6px;
+  }
+
+  /* output */
+  .output-panel{ position: sticky; top: 20px; }
+  .memo{
+    background: #fbfaf6; border:1px solid var(--line); border-radius: 10px;
+    padding: 20px 18px 18px; min-height: 260px;
+    font-family: var(--mono); font-size: 13px; color: var(--ink);
+    white-space: pre-wrap; word-break: break-word;
+    background-image: linear-gradient(var(--accent-soft) 0 1px, transparent 1px);
+    background-size: 100% 26px;
+    line-height: 26px;
+    position: relative;
+  }
+  .memo.is-empty{ color:#9aa4b1; background-image:none; line-height:1.6; }
+  .memo::before{
+    content:'GENERATED';
+    position:absolute; top:-9px; left:14px; background: var(--panel);
+    font-family:'Noto Sans JP', sans-serif; font-size:10px; letter-spacing:.12em;
+    color: var(--accent-ink); font-weight:700; padding: 0 6px;
+  }
+
+  .copy-row{ display:flex; justify-content:flex-end; margin-top: 14px; }
+  .copy-btn{
+    appearance:none; cursor:pointer; border:none; background: var(--accent); color:#fff;
+    font-size: 13.5px; font-weight:700; padding: 10px 18px; border-radius: 9px;
+    display:inline-flex; align-items:center; gap:8px; transition: background .12s, transform .05s;
+    font-family:'Noto Sans JP', sans-serif;
+  }
+  .copy-btn:hover{ background: var(--accent-ink); }
+  .copy-btn:active{ transform: scale(.97); }
+  .copy-btn.copied{ background:#3a8f4a; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <h1><span class="mark">E</span>エッジリード文面生成ツール</h1>
+    <div class="sub">会社を選ぶと、入力項目とフォーマットが自動で切り替わります</div>
+  </header>
+
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-tab="identity">人物照合</button>
+    <button class="tab" data-tab="job">案件確認</button>
+    <button class="tab" data-tab="progress">進捗状況確認</button>
+    <button class="tab" data-tab="line">LINE推薦文面</button>
+  </div>
+
+  <!-- 人物照合 TAB -->
+  <div class="tab-panel" id="tab-identity">
+    <div class="grid">
+      <div class="panel">
+        <h2>会社を選択</h2>
+        <div class="chip-grid" id="identityChips"></div>
+        <div id="identityBadge"></div>
+        <div id="identityFields"></div>
+      </div>
+
+      <div class="panel output-panel">
+        <h2>生成された文面</h2>
+        <div class="memo is-empty" id="identityOutput">← 会社を選択して入力してください</div>
+        <div class="copy-row">
+          <button class="copy-btn" id="identityCopy">📋 コピー</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 案件確認 TAB -->
+  <div class="tab-panel" id="tab-job" style="display:none;">
+    <div class="grid">
+      <div class="panel">
+        <h2>会社を選択</h2>
+        <div class="chip-grid" id="jobChips"></div>
+        <div id="jobBadge"></div>
+        <div id="jobFields"></div>
+      </div>
+
+      <div class="panel output-panel">
+        <h2>生成された文面</h2>
+        <div class="memo is-empty" id="jobOutput">← 会社を選択して入力してください</div>
+        <div class="copy-row">
+          <button class="copy-btn" id="jobCopy">📋 コピー</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 進捗状況確認 TAB -->
+  <div class="tab-panel" id="tab-progress" style="display:none;">
+    <div class="grid">
+      <div class="panel">
+        <h2>会社を選択</h2>
+        <div class="chip-grid" id="progressChips"></div>
+        <div id="progressBadge"></div>
+        <div id="progressFields"></div>
+      </div>
+
+      <div class="panel output-panel">
+        <h2>生成された文面</h2>
+        <div class="memo is-empty" id="progressOutput">← 会社を選択して入力してください</div>
+        <div class="copy-row">
+          <button class="copy-btn" id="progressCopy">📋 コピー</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LINE推薦文面 TAB -->
+  <div class="tab-panel" id="tab-line" style="display:none;">
+    <div class="grid">
+      <div class="panel">
+        <h2>会社を選択</h2>
+        <div class="chip-grid" id="lineChips"></div>
+        <div id="lineBadge"></div>
+        <div id="lineFields"></div>
+      </div>
+
+      <div class="panel output-panel">
+        <h2>生成された文面</h2>
+        <div class="memo is-empty" id="lineOutput">← 会社を選択して入力してください</div>
+        <div class="copy-row">
+          <button class="copy-btn" id="lineCopy">📋 コピー</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ---------------------------------------------------------
+   会社ごとの設定
+   fields: フォームに出す入力項目 { id, label, optional }
+   badge : 一覧上の注意書き（あれば）
+   generate(v): 入力値から文面を組み立てる関数
+--------------------------------------------------------- */
+const companies = {
+  NT: {
+    label: 'NT',
+    fields: [
+      { id:'tantou', label:'担当者名' },
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'tel', label:'電話番号', hint:'※ハイフンなし', note:'※携帯電話が停止されていて使えない場合でもその番号を入力\n※番号がどうしてもない場合は0を入力' },
+      { id:'mail', label:'メールアドレス', hint:'※任意' },
+    ],
+    generate: v => `お世話になっております。\n照合お願いします。\n\n担当者名：${v.tantou}\n\n氏名：${v.name}\nフリガナ：${v.furigana}\n生年月日：${v.birth}\n電話番号：${v.tel}\nメールアドレス：${v.mail}`
+  },
+  WIC: {
+    label: 'WIC',
+    fields: [
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'tel', label:'電話番号' },
+    ],
+    generate: v => `お世話になっております。\n照合お願いします。\n\n氏名：${v.name}\nフリガナ：${v.furigana}\n生年月日：${v.birth}\n電話番号：${v.tel}`
+  },
+  BN: {
+    label: 'BN',
+    fields: [
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'tel', label:'電話番号' },
+    ],
+    generate: v => `お世話になっております。\n照合お願いします。\n\n氏名：${v.name}\nフリガナ：${v.furigana}\n生年月日：${v.birth}\n電話番号：${v.tel}`
+  },
+  'CO/COH': {
+    label: 'CO/COH',
+    fields: [
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'tel', label:'電話番号' },
+      { id:'mail', label:'メールアドレス', optional:true, note:'※Jobuddyのチェックができないため、送付時に送付できない可能性があります。\nJobuddyの確認も必要であれば、メールアドレスも記載お願いします。' },
+    ],
+    generate: v => `お世話になっております。\n照合お願いします。\n\n氏名：${v.name}\nフリガナ：${v.furigana}\n生年月日：${v.birth}\n電話番号：${v.tel}\nメールアドレス（あれば）：${v.mail}`
+  },
+  NK: {
+    label: 'NK',
+    fields: [
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'tel', label:'電話番号' },
+    ],
+    generate: v => `お世話になっております。\n照合お願いします。\n\n氏名：${v.name}\nフリガナ：${v.furigana}\n生年月日：${v.birth}\n電話番号：${v.tel}`
+  },
+  TKG: {
+    label: 'TKG',
+    badge: '※推薦前の照合必須',
+    fields: [
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'tel', label:'電話番号' },
+    ],
+    generate: v => `お世話になっております。\n照合お願いします。\n\n氏名：${v.name}\nフリガナ：${v.furigana}\n生年月日：${v.birth}\n電話番号：${v.tel}`
+  },
+  WT: {
+    label: 'WT',
+    fields: [
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'tel', label:'電話番号' },
+      { id:'anken', label:'案件NO', optional:true },
+      { id:'factory', label:'工場名', optional:true, note:'※希望案件なしの場合▼\n案件NO：希望なし\n工場名：希望なし' },
+    ],
+    generate: v => `お世話になっております。\n照合お願いします。\n\n氏名：${v.name}\nフリガナ：${v.furigana}\n生年月日：${v.birth}\n電話番号：${v.tel}\n\n案件NO：${v.anken}\n工場名：${v.factory}`
+  },
+  TS: {
+    label: 'TS',
+    fields: [
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'ふりがな', placeholder:'例）やまだ　たろう', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'zip', label:'〒（ハイフンなし）' },
+      { id:'address', label:'住所' },
+      { id:'tel', label:'電話番号' },
+      { id:'mail', label:'メールアドレス' },
+    ],
+    generate: v => `お世話になっております。\n照合お願いします。\n\n氏名：${v.name}\nふりがな：${v.furigana}\n生年月日：${v.birth}\n〒（ハイフンなし）：${v.zip}\n住所：${v.address}\n電話番号：${v.tel}\nメールアドレス：${v.mail}`
+  },
+  AIM: {
+    label: 'AIM',
+    badge: '※推薦前の照合必須',
+    fields: [
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'tel', label:'電話番号' },
+    ],
+    generate: v => `お世話になっております。\n人物照合をお願いします。\n\n氏名：${v.name}\nフリガナ：${v.furigana}\n生年月日：${v.birth}\n電話番号：${v.tel}`
+  },
+  '東洋ワーク': {
+    label: '東洋ワーク',
+    badge: '※推薦前の照合必須',
+    fields: [
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'tel', label:'電話番号' },
+      { id:'jobno', label:'求人番号（任意）', optional:true },
+      { id:'company', label:'就業先企業名（任意）', optional:true },
+    ],
+    generate: v => `お世話になっております。\n照合お願いします。\n\n氏名：${v.name}\nフリガナ：${v.furigana}\n生年月日：${v.birth}\n電話番号：${v.tel}\n\n求人番号（任意）：${v.jobno}\n就業先企業名（任意）：${v.company}`
+  },
+  '平山': {
+    label: '平山',
+    badge: '※推薦前の照合必須',
+    fields: [
+      { id:'base', label:'拠点' },
+      { id:'name', label:'名前', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'tel', label:'電話番号' },
+      { id:'factoryjob', label:'希望工場名/求人No' },
+    ],
+    generate: v => `お世話になっております。\n照合お願いします。\n\n拠点：${v.base}\n\n・名前：${v.name}\n・フリガナ：${v.furigana}\n・生年月日：${v.birth}\n・電話番号：${v.tel}\n・希望工場名/求人No：${v.factoryjob}\n・ラコネ上紹介料（本部で埋めます）：\n\n紹介料も相違ないでしょうか。\nご確認よろしくお願いいたします。`
+  },
+  '新日本': {
+    label: '新日本',
+    badge: '※推薦前の照合必須',
+    fields: [
+      { id:'name', label:'名前', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'tel', label:'電話番号' },
+      { id:'factory', label:'希望工場名（あれば記載）', optional:true },
+    ],
+    generate: v => `お世話になっております。\n照合お願いします。\n\n・名前：${v.name}\n・フリガナ：${v.furigana}\n・生年月日：${v.birth}\n・電話番号：${v.tel}\n・希望工場名（あれば記載）：${v.factory}`
+  },
+  'テクノサービス': {
+    label: 'テクノサービス',
+    fields: [
+      { id:'branch', label:'支店ブロック' },
+      { id:'office', label:'営業所拠点' },
+      { id:'question', label:'質問事項' },
+    ],
+    generate: v => `〈支店ブロック〉${v.branch}\n〈営業所拠点〉${v.office}\n〈質問事項〉${v.question}`
+  },
+};
+
+const identityOrder = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','AIM','東洋ワーク','平山','新日本','テクノサービス'];
+
+/* ---------------------------------------------------------
+   案件確認：全社共通テンプレート
+--------------------------------------------------------- */
+const jobTemplate = v => `お世話になっております。\n下記案件について質問です。\n\n案件NO：${v.anken}\n案件名：${v.name}\n質問内容：${v.content}`;
+const jobFields = [
+  { id:'anken', label:'案件NO' },
+  { id:'name', label:'案件名' },
+  { id:'content', label:'質問内容' },
+];
+const jobCompanyKeys = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','AIM','東洋ワーク','平山','新日本'];
+const jobCompanies = {};
+jobCompanyKeys.forEach(key => {
+  jobCompanies[key] = { label: key, fields: jobFields, generate: jobTemplate };
+});
+const jobOrder = jobCompanyKeys;
+
+/* ---------------------------------------------------------
+   汎用ツール初期化：company一覧 + 生成ロジックを
+   チップ / フォーム / 出力パネルに結びつける
+--------------------------------------------------------- */
+function initTool(prefix, companiesCfg, order, prependCompanyLabel){
+  let currentCompany = null;
+  let values = {};
+
+  const chipContainer = document.getElementById(prefix + 'Chips');
+  const badgeNoteEl = document.getElementById(prefix + 'Badge');
+  const formFieldsEl = document.getElementById(prefix + 'Fields');
+  const outputEl = document.getElementById(prefix + 'Output');
+  const copyBtn = document.getElementById(prefix + 'Copy');
+
+  order.forEach(key => {
+    const btn = document.createElement('button');
+    btn.className = 'chip';
+    btn.textContent = companiesCfg[key].label;
+    btn.dataset.key = key;
+    btn.addEventListener('click', () => selectCompany(key));
+    chipContainer.appendChild(btn);
+  });
+
+  function selectCompany(key){
+    currentCompany = key;
+    values = {};
+    [...chipContainer.children].forEach(c => c.classList.toggle('active', c.dataset.key === key));
+    renderForm();
+    updateOutput();
+  }
+
+  function renderForm(){
+    const cfg = companiesCfg[currentCompany];
+    badgeNoteEl.innerHTML = '';
+    formFieldsEl.innerHTML = '';
+
+    const rawBadge = (typeof cfg.badge === 'function') ? cfg.badge(values) : cfg.badge;
+    const badgeList = Array.isArray(rawBadge) ? rawBadge.filter(Boolean) : (rawBadge ? [rawBadge] : []);
+    badgeList.forEach(text => {
+      const b = document.createElement('div');
+      b.className = 'badge-note' + (text.startsWith('【必要な書類】') ? ' badge-note--doc' : '');
+      b.textContent = text;
+      badgeNoteEl.appendChild(b);
+    });
+
+    if (cfg.sample){
+      const a = document.createElement('a');
+      a.className = 'sample-link';
+      a.href = cfg.sample.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = '📄 ' + cfg.sample.label;
+      badgeNoteEl.appendChild(a);
+    }
+
+    if (!cfg.generate){
+      formFieldsEl.innerHTML = `<div class="todo-state">${cfg.label} のテンプレートはまだ登録されていません。文言を教えていただければ追加します。</div>`;
+      return;
+    }
+
+    const fieldList = (typeof cfg.fields === 'function') ? cfg.fields(values) : cfg.fields;
+    fieldList.forEach(f => {
+      const wrap = document.createElement('div');
+      wrap.className = 'field';
+      const label = document.createElement('label');
+      label.innerHTML = f.label + (f.optional ? ' <span class="opt">(任意)</span>' : '') + (f.hint ? ' <span class="hint">' + f.hint + '</span>' : '');
+      if (f.label) wrap.appendChild(label);
+
+      if (f.type === 'info'){
+        // display-only: label + note act as a static confirmation block, no input control
+      } else if (f.type === 'select'){
+        const select = document.createElement('select');
+        select.dataset.id = f.id;
+        const blank = document.createElement('option');
+        blank.value = ''; blank.textContent = '選択してください';
+        select.appendChild(blank);
+        f.options.forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt; o.textContent = opt;
+          select.appendChild(o);
+        });
+        select.addEventListener('change', () => {
+          values[f.id] = select.value;
+          if (f.controlsForm) renderForm();
+          updateOutput();
+        });
+        if (values[f.id]) select.value = values[f.id];
+        wrap.appendChild(select);
+      } else if (f.type === 'multiselect'){
+        const group = document.createElement('div');
+        group.className = 'check-group';
+        f.options.forEach((opt, i) => {
+          const item = document.createElement('label');
+          item.className = 'check-item';
+          const cb = document.createElement('input');
+          cb.type = 'checkbox';
+          cb.value = opt;
+          cb.addEventListener('change', () => {
+            const checked = [...group.querySelectorAll('input:checked')].map(c => c.value);
+            values[f.id] = checked.length ? checked.join('、') : (f.noneLabel || '');
+            updateOutput();
+          });
+          item.appendChild(cb);
+          item.appendChild(document.createTextNode(opt));
+          group.appendChild(item);
+        });
+        wrap.appendChild(group);
+      } else {
+        const input = document.createElement('input');
+        input.type = (f.type === 'date') ? 'date' : 'text';
+        input.dataset.id = f.id;
+        if (f.placeholder) input.placeholder = f.placeholder;
+        input.addEventListener('input', () => {
+          values[f.id] = (f.type === 'date') ? input.value.replace(/-/g, '/') : input.value;
+          updateOutput();
+        });
+        if (values[f.id]) input.value = (f.type === 'date') ? values[f.id].replace(/\//g, '-') : values[f.id];
+        wrap.appendChild(input);
+      }
+
+      if (f.note){
+        const noteEl = document.createElement('div');
+        noteEl.className = 'field-note';
+        noteEl.textContent = f.note;
+        wrap.appendChild(noteEl);
+      }
+      formFieldsEl.appendChild(wrap);
+    });
+  }
+
+  function updateOutput(){
+    if (!currentCompany){
+      outputEl.textContent = '← 会社を選択して入力してください';
+      outputEl.classList.add('is-empty');
+      return;
+    }
+    const cfg = companiesCfg[currentCompany];
+    if (!cfg.generate){
+      outputEl.textContent = '← このテンプレートはまだ準備中です';
+      outputEl.classList.add('is-empty');
+      return;
+    }
+    let text = cfg.generate(new Proxy(values, { get: (t,p) => t[p] ?? '' }));
+    if (prependCompanyLabel) text = `${cfg.label}\n${text}`;
+    outputEl.textContent = text;
+    outputEl.classList.remove('is-empty');
+  }
+
+  copyBtn.addEventListener('click', async () => {
+    const text = outputEl.textContent;
+    if (!text || outputEl.classList.contains('is-empty')) return;
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch(e){
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    copyBtn.textContent = '✅ コピーしました';
+    copyBtn.classList.add('copied');
+    setTimeout(() => {
+      copyBtn.textContent = '📋 コピー';
+      copyBtn.classList.remove('copied');
+    }, 1500);
+  });
+
+  updateOutput();
+}
+
+/* ---------------------------------------------------------
+   進捗状況確認：共通テンプレート + AIM専用テンプレート
+--------------------------------------------------------- */
+const progressCommonTemplate = v => `お世話になります。\n下記求職者様についてご確認となります。\n\n・紹介(推薦日)：${v.date}\n・求職者名：${v.name}\n・紹介先工場名：${v.factory}\n・現状：${v.status}\n\n最新の進捗お伺いできますでしょうか。\nよろしくお願いいたします。`;
+const progressCommonFields = [
+  { id:'date', label:'紹介(推薦日)' },
+  { id:'name', label:'求職者名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+  { id:'factory', label:'紹介先工場名' },
+  { id:'status', label:'現状' },
+];
+const progressCommonKeys = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','東洋ワーク','平山','新日本'];
+const progressCompanies = {};
+progressCommonKeys.forEach(key => {
+  progressCompanies[key] = { label: key, fields: progressCommonFields, generate: progressCommonTemplate };
+});
+progressCompanies['テクノサービス'] = {
+  label: 'テクノサービス',
+  fields: [
+    { id:'date', label:'紹介(推薦日)' },
+    { id:'name', label:'求職者名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+    { id:'status', label:'現状' },
+  ],
+  generate: v => `お世話になります。\n下記求職者様についてご確認となります。\n\n・紹介(推薦日)：${v.date}\n・求職者名：${v.name}\n・現状：${v.status}\n\n最新の進捗お伺いできますでしょうか。\nよろしくお願いいたします。`
+};
+progressCompanies['AIM'] = {
+  label: 'AIM',
+  fields: [
+    { id:'date', label:'紹介(推薦日)' },
+    { id:'name', label:'求職者名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+    { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+    { id:'birth', label:'生年月日' },
+    { id:'tel', label:'電話番号' },
+    { id:'anken', label:'案件番号' },
+    { id:'factory', label:'工場名' },
+    { id:'detail', label:'現状把握している情報の詳細' },
+    { id:'contact', label:'求職者と連絡が取れているか' },
+    { id:'inquiry', label:'進捗のうち、具体的に何を問い合わせたいか' },
+  ],
+  generate: v => `お世話になります。\n下記求職者様についてご確認となります。\n・紹介(推薦日)：${v.date}\n・求職者名：${v.name}\n・フリガナ：${v.furigana}\n・生年月日：${v.birth}\n・電話番号：${v.tel}\n・案件番号：${v.anken}\n・工場名：${v.factory}\n・現状把握している情報の詳細：${v.detail}\n・求職者と連絡が取れているか：${v.contact}\n・進捗のうち、具体的に何を問い合わせたいか：${v.inquiry}\n\n最新の進捗お伺いできますでしょうか。\nよろしくお願いいたします。`
+};
+const progressOrder = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','AIM','東洋ワーク','平山','新日本','テクノサービス'];
+
+/* ---------------------------------------------------------
+   LINE推薦文面
+--------------------------------------------------------- */
+const QUALIFICATION_OPTIONS = ['フォークリフト運転技能者','玉掛技能者','クレーン運転士','溶接','ボイラー技士','機械保全技能士','電子機器組立技能士','CAD利用技術者','電気工事士','自動車整備士'];
+const EXPERIENCE_OPTIONS = ['フォークリフト業務','玉掛業務','クレーン業務','溶接業務','ボイラー取扱業務','機械保全業務','電子機器組立て業務','CADオペレーター','電気工事業務','自動車整備業務'];
+const YESNO = ['有','無'];
+const POSSIBLE = ['可能','不可能'];
+const POSSIBLE_SHORT = ['可能','不可'];
+
+const lineCompanies = {
+  NT: {
+    label: 'NT',
+    badge: '【必要な書類】履歴書・職務経歴書・ヒアリングシート・プロフィールシートなど求職者の情報がわかる書類　※ロボット設備エンジニアは採用時チェックシート提出必要',
+    fields: (v) => [
+      { id:'suggestType', label:'推薦区分', type:'select', options:['❶通常','❷面接日時確定','❸同時面接者'], hint:'※該当のみ記載されます', controlsForm:true },
+      { id:'date', label:'推薦日', type:'date' },
+      { id:'jobno', label:'お仕事No' },
+      { id:'anken', label:'案件名' },
+      { id:'commute', label:'通勤or入寮', type:'select', options:['通勤','入寮'] },
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日(西暦)', placeholder:'例）1987/02/16' },
+      { id:'gender', label:'性別', type:'select', options:['男性','女性'] },
+      { id:'address', label:'現在の住所' },
+      { id:'tel', label:'電話番号(ハイフン無)' },
+      { id:'mail', label:'メールアドレス' },
+      { id:'workwearSize', label:'作業着サイズ' },
+      { id:'height', label:'身長' },
+      { id:'weight', label:'体重' },
+      { id:'waist', label:'ウエスト' },
+      { id:'shoeSize', label:'靴' },
+      { id:'visionType', label:'視力(裸眼orメガネorコンタクトor老眼)', type:'select', options:['裸眼','メガネ','コンタクト','老眼'] },
+      { id:'visionRight', label:'視力（右）' },
+      { id:'visionLeft', label:'視力（左）' },
+      { id:'heavyWork', label:'重量物を扱う作業', type:'select', options:POSSIBLE },
+      { id:'standingWork', label:'立ち仕事', type:'select', options:POSSIBLE },
+      { id:'squattingWork', label:'しゃがみ作業', type:'select', options:POSSIBLE },
+      { id:'cleanroomWork', label:'クリーンルーム内作業', type:'select', options:POSSIBLE },
+      { id:'microscopeWork', label:'顕微鏡・拡大鏡作業', type:'select', options:POSSIBLE },
+      { id:'pcWork', label:'PC入力作業', type:'select', options:POSSIBLE },
+      { id:'nightShift', label:'夜勤', type:'select', options:POSSIBLE_SHORT },
+      { id:'shiftWork', label:'交代勤務', type:'select', options:POSSIBLE_SHORT },
+      { id:'pregnant', label:'妊娠中', type:'select', options:YESNO },
+      { id:'regularHospital', label:'定期通院', type:'select', options:YESNO },
+      { id:'mentalIllness', label:'精神疾患', type:'select', options:YESNO },
+      { id:'bloodSugar', label:'血糖管理', type:'select', options:YESNO },
+      { id:'medicationTiming', label:'投薬時間制限', type:'select', options:YESNO },
+      { id:'asthma', label:'喘息', type:'select', options:YESNO },
+      { id:'epilepsy', label:'てんかん', type:'select', options:YESNO },
+      { id:'atopy', label:'アトピー', type:'select', options:YESNO },
+      { id:'allergy', label:'アレルギー', placeholder:'具体的な内容を記載' },
+      { id:'colorBlind', label:'色弱', type:'select', options:YESNO },
+      { id:'readingGlasses', label:'手元確認時の老眼鏡使用', type:'select', options:YESNO },
+      { id:'tattoo', label:'タトゥー', type:'select', options:YESNO },
+      { id:'disabilityCert', label:'障碍者手帳・療育手帳所持', type:'select', options:YESNO },
+      { id:'factoryExperience', label:'工場経験', type:'select', options:YESNO,
+        note:'「工場経験あり」とは、以下2つの条件を両方満たす方を指します。\n①同一の製造工場で、6ヶ月以上継続して就業した経験がある方\n　複数の工場での経験を合算して6ヶ月以上になる場合は対象外です。\n②製品の製造に直接携わる作業の経験がある方\n　原材料の加工、製品の組み立て、機械操作など、実際に製品を作る工程での作業を指します。\n　物流倉庫での作業、運搬・運送業、建設・土木作業、清掃などの経験は「工場経験」とはみなしません。' },
+      { id:'qualifications', label:'お持ちの資格', type:'multiselect', options:QUALIFICATION_OPTIONS, noneLabel:'該当資格なし', note:'※複数選択可能です' },
+      { id:'workExperience', label:'経験業務', type:'multiselect', options:EXPERIENCE_OPTIONS, noneLabel:'該当業務経験なし', note:'※複数選択可能です' },
+      { id:'availableDate', label:'就業可能日' },
+      { id:'foreignKanji', label:'漢字の読み書き', type:'select', options:POSSIBLE, optional:true, hint:'※外国籍の場合のみ' },
+      { id:'foreignEducation', label:'日本の義務教育', type:'select', options:['修了','未修了'], optional:true, hint:'※外国籍の場合のみ' },
+      { id:'remarks', label:'備考', optional:true },
+      { id:'emergencyContact', label:'緊急連絡先', optional:true },
+      { id:'emergencyTel', label:'TEL（緊急連絡先）', optional:true },
+      ...(v.suggestType === '❷面接日時確定' ? [
+        { id:'meetingDate', label:'❶予約完了されている方の面談日', placeholder:'例）8/15', note:'入力例：8月15日の場合 → 8/15' },
+        { id:'meetingTime', label:'❷予約完了されている方の面談時間', placeholder:'例）15:00', note:'入力例：15時の場合 → 15:00' },
+        { id:'meetingVenue', label:'❸予約完了されている方の面談会場名', note:'WEB・LINEの場合はその旨記載ください' },
+      ] : v.suggestType === '❸同時面接者' ? [
+        { id:'coName', label:'❶予約完了されている方の氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+        { id:'coFurigana', label:'❷予約完了されている方のフリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+        { id:'coBirth', label:'❸予約完了されている方の生年月日', placeholder:'例）2003/9/9', note:'入力例：2003年9月9日の場合 → 2003/9/9' },
+      ] : [
+        { id:'interviewType', label:'面談形式', type:'select', options:['WEB面談希望','来社面談希望'] },
+        { id:'interviewDate1', label:'面接候補日①', placeholder:'例）7月14日10時～' },
+        { id:'interviewDate2', label:'面接候補日②', placeholder:'例）7月14日10時～' },
+        { id:'interviewDate3', label:'面接候補日③', placeholder:'例）7月14日10時～' },
+      ]),
+      { id:'staff', label:'担当（フルネーム）' },
+      { id:'fee', label:'単価（紹介料）', note:'例）300,000　※30万は✖' },
+    ],
+    generate: v => {
+      const meetingBlock = (v.suggestType === '❷面接日時確定')
+        ? `❶予約完了されている方の面談日：${v.meetingDate}\n❷予約完了されている方の面談時間：${v.meetingTime}\n❸予約完了されている方の面談会場名：${v.meetingVenue}`
+        : (v.suggestType === '❸同時面接者')
+        ? `❶予約完了されている方の氏名：${v.coName}\n❷予約完了されている方のフリガナ：${v.coFurigana}\n❸予約完了されている方の生年月日：${v.coBirth}`
+        : `${v.interviewType}\n面接候補日／3つ（例：7月14日10時～）\n・${v.interviewDate1}\n・${v.interviewDate2}\n・${v.interviewDate3}`;
+      return `依頼お願いいたします。\n【日研トータルソーシング】\n${v.suggestType}\n\n■推薦日：${v.date}\n■お仕事No：${v.jobno}\n■案件名：${v.anken}\n■通勤or入寮：${v.commute}\n■氏名：${v.name}\n■フリガナ：${v.furigana}\n■生年月日(西暦)：${v.birth}\n■性別：${v.gender}\n■現在の住所：${v.address}\n■電話番号(ハイフン無)：${v.tel}\n■メールアドレス：${v.mail}\n■作業着サイズ：${v.workwearSize}\n■身長：${v.height}\n■体重：${v.weight}\n■ウエスト：${v.waist}\n■靴：${v.shoeSize}\n■視力(裸眼orメガネorコンタクトor老眼)：${v.visionType}\n■視力：\n右→${v.visionRight}\n左→${v.visionLeft}\n■重量物を扱う作業：${v.heavyWork}\n■立ち仕事：${v.standingWork}\n■しゃがみ作業：${v.squattingWork}\n■クリーンルーム内作業：${v.cleanroomWork}\n■顕微鏡・拡大鏡作業：${v.microscopeWork}\n■PC入力作業：${v.pcWork}\n■夜勤：${v.nightShift}\n■交代勤務：${v.shiftWork}\n■妊娠中：${v.pregnant}\n■定期通院：${v.regularHospital}\n■精神疾患：${v.mentalIllness}\n■血糖管理：${v.bloodSugar}\n■投薬時間制限：${v.medicationTiming}\n■喘息：${v.asthma}\n■てんかん：${v.epilepsy}\n■アトピー：${v.atopy}\n■アレルギー：${v.allergy}\n■色弱：${v.colorBlind}\n■手元確認時の老眼鏡使用：${v.readingGlasses}\n■タトゥー：${v.tattoo}\n■障碍者手帳・療育手帳所持：${v.disabilityCert}\n■工場経験：${v.factoryExperience}\n■お持ちの資格：${v.qualifications}\n■経験業務：${v.workExperience}\n\n■就業可能日：${v.availableDate}\n\n◆外国籍について◆※外国籍の場合のみ記載\n漢字の読み書き：${v.foreignKanji}\n日本の義務教育：${v.foreignEducation}\n\n備考：${v.remarks}\n緊急連絡先：${v.emergencyContact}\nTEL：${v.emergencyTel}\n\nよろしくお願いいたします。\n\n${meetingBlock}\n\n担当：${v.staff}\n単価：${v.fee}`;
+    }
+  },
+  WIC: {
+    label: 'WIC',
+    badge: v => v.wicType === '外国籍' ? '※必要書類：在留カードの画像データ' : null,
+    fields: (v) => [
+      { id:'wicType', label:'区分', type:'select', options:['通常','外国籍'], controlsForm:true },
+      { id:'date', label:'推薦日', type:'date' },
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'ふりがな', placeholder:'例）やまだ　たろう', hint:'※全角スペース' },
+      { id:'gender', label:'性別', type:'select', options:['男性','女性'] },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'zip', label:'郵便番号', hint:'※ハイフンなし' },
+      { id:'address', label:'住所' },
+      { id:'mobile', label:'携帯番号', hint:'※ハイフンなし' },
+      { id:'mail', label:'メールアドレス' },
+      { id:'jobInfo', label:'推薦先の仕事番号/工場名' },
+      { id:'interviewDate1', label:'面接日程候補日①', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+      { id:'interviewDate2', label:'面接日程候補日②', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+      { id:'interviewDate3', label:'面接日程候補日③', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+      { id:'wicConsult', label:'案件に関してWIC担当者に相談', type:'select', options:['有','無'] },
+      { id:'existingIllnessHeader', label:'【既往歴に関して】', type:'info' },
+      { id:'medicalQuestion', label:'', type:'info', note:'■ヒアリング時に病歴や精神疾患の点で確認できたことをご申告をお願いいたします' },
+      { id:'medicalDisclosure', label:'選択してください', type:'select', options:['はい','いいえ'] },
+      { id:'noFalseQuestion', label:'', type:'info', note:'■採用してもらう為に本人に虚偽の申告をさせないことにご協力ください\n紹介基本契約書 第8条（契約の解除）（8）\n※ 発覚した場合は、第8条2-(8) に基づき処分と致します。\n※（8）相手方に対して背信的行為があったとき' },
+      { id:'noFalseDisclosure', label:'選択してください', type:'select', options:['はい','いいえ'] },
+      ...(v.wicType === '外国籍' ? [
+        { id:'nationality', label:'国籍', note:'※必須' },
+        { id:'residenceStatus', label:'在留資格', note:'※必須（在留カードの画像データも提出書類として添付してください）' },
+      ] : []),
+      { id:'soudanContent', label:'相談内容（特記事項）', optional:true, note:'「相談済」の文言が確認できない場合は受付不可となります。相談先の案件担当者名またはブロック採用担当者名を必ずご記載ください。\n例）関東第2B ●●様相談済' },
+      { id:'fee', label:'フィー', note:'例）300,000　※30万は✖' },
+      { id:'staff', label:'担当' },
+    ],
+    generate: v => {
+      const isForeign = v.wicType === '外国籍';
+      const header = isForeign ? '【ワールドインテック様／外国籍】' : '【ワールドインテック様】';
+      const specialNoteBlock = isForeign ? `国籍：${v.nationality}\n在留資格：${v.residenceStatus}\n` : '';
+      return `依頼お願いいたします。\n${header}\n\n■推薦日：${v.date}\n■氏名：${v.name}\n■ふりがな：${v.furigana}\n■性別：${v.gender}\n■生年月日：${v.birth}\n■郵便番号：${v.zip}\n■住所：${v.address}\n■携帯番号：${v.mobile}\n■メールアドレス：${v.mail}\n■推薦先の仕事番号/工場名：${v.jobInfo}\n■面接日程候補日：\n・${v.interviewDate1}\n・${v.interviewDate2}\n・${v.interviewDate3}\n■案件に関してWIC担当者に相談：${v.wicConsult}\n■RACONNEへの同意：有\n\n【既往歴に関して】\n■ヒアリング時に病歴や精神疾患の点で確認できたことをご申告をお願いいたします：${v.medicalDisclosure}\n■採用してもらう為に本人に虚偽の申告をさせないことにご協力ください：${v.noFalseDisclosure}\n紹介基本契約書 第8条（契約の解除）（8）\n※ 発覚した場合は、第8条2-(8) に基づき処分と致します。\n※（8）相手方に対して背信的行為があったとき\n\n【紹介に関して】\n■〈転職勧奨〉を目的とした紹介、および、〈お祝い金〉これに類する名目で求職者に金銭などを提供する行為は禁止となる事をご理解ください：はい\n■意図的にミスマッチの求人の紹介も不適切な人材紹介となることをご理解ください：はい\n※ 職業紹介事業の許可条件にて【転職推奨の禁止】が追加されております。\n※ 違法行為と携わる企業とは関係を解消と致します。（コンプライアンス）\n■外国籍人材のご紹介の場合は、特記事項に国籍と在留資格の記載と提出書類に在留カードの添付をお願いいたします。：はい\n\n【候補者本人の同意に関して】\n■候補者の個人情報について、採用選考ならびに将来の採用機会に関する情報提供を目的として利用されること、および紹介会社の保護期間満了後に貴社から直接連絡が行われる場合があることについて、候補者本人の同意を取得しています：はい\n\n【特記事項】\n${specialNoteBlock}相談内容：${v.soudanContent}\n\nフィー：${v.fee}\n担当：${v.staff}`;
+    }
+  },
+  BN: {
+    label: 'BN',
+    badge: '【必要な書類】指定Excel',
+    sample: { label: '見本を見る（指定Excelの記入例）', url: 'BN.pdf' },
+    fields: [
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダタロウ', hint:'※カタカナ' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'gender', label:'性別', type:'select', options:['男性','女性'] },
+      { id:'address', label:'現在の住所' },
+      { id:'tel', label:'電話番号', hint:'※ハイフンなし' },
+      { id:'mail', label:'メールアドレス' },
+      { id:'jobInfo', label:'推薦先の仕事番号/工場名' },
+      { id:'fee', label:'フィー', note:'例）300,000　※30万は✖' },
+      { id:'staff', label:'担当' },
+    ],
+    generate: v => `依頼お願いいたします。\n【BREXA　Next様】\n■推薦日：${v.date}\n■氏名：${v.name}\n■フリガナ：${v.furigana}\n■生年月日：${v.birth}\n■性別：${v.gender}\n■現在の住所：${v.address}\n■電話番号：${v.tel}\n■メールアドレス：${v.mail}\n■推薦先の仕事番号/工場名：${v.jobInfo}\nフィー：${v.fee}\n担当：${v.staff}`
+  },
+  'CO/COH': {
+    label: 'CO/COH',
+    fields: [
+      { id:'category', label:'区分', type:'select', options:['CO（工場以外）','COH（工場案件）'] },
+      { id:'date', label:'推薦日', type:'date' },
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'gender', label:'性別', type:'select', options:['男性','女性'] },
+      { id:'zip', label:'現在の〒' },
+      { id:'address', label:'現在の住所' },
+      { id:'mail', label:'メール' },
+      { id:'tel', label:'TEL' },
+      { id:'jobId', label:'推薦先の求人ID' },
+      { id:'company', label:'会社名' },
+      { id:'nationality', label:'国籍' },
+      { id:'desiredLocation', label:'希望勤務地', placeholder:'都道府県で記入' },
+      { id:'currentIncome', label:'現在の年収' },
+      { id:'dormPreference', label:'寮希望', type:'select', options:['入寮希望','通勤希望','どちらでもいい'] },
+      { id:'fee', label:'フィー', note:'例）300,000　※30万は✖' },
+      { id:'staff', label:'担当' },
+    ],
+    generate: v => `依頼お願いいたします。\n【総合キャリアオプション様】\n${v.category}\n\n■推薦日：${v.date}\n■氏名：${v.name}\n■フリガナ：${v.furigana}\n■生年月日：${v.birth}\n■性別：${v.gender}\n■現在の〒：${v.zip}\n■現在の住所：${v.address}\n\n■メール：${v.mail}\n■TEL：${v.tel}\n■推薦先の求人ID：${v.jobId}\n■会社名：${v.company}\n■国籍：${v.nationality}\n■希望勤務地：${v.desiredLocation}\n■現在の年収：${v.currentIncome}\n■寮希望：${v.dormPreference}\n■フィー：${v.fee}\n■担当：${v.staff}`
+  },
+  NK: {
+    label: 'NK',
+    fields: [
+      { id:'date', label:'推薦日', type:'date' },
+      { id:'jobno', label:'お仕事No' },
+      { id:'workplace', label:'勤務先名' },
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ（半角）', placeholder:'例）ﾔﾏﾀﾞﾀﾛｳ', hint:'※半角カタカナ' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'gender', label:'性別', type:'select', options:['男性','女性'] },
+      { id:'tel', label:'電話番号', hint:'※ハイフンなし' },
+      { id:'mail', label:'メールアドレス' },
+      { id:'zip', label:'〒', hint:'※ハイフンなし' },
+      { id:'address', label:'住所' },
+      { id:'commute', label:'通勤or入寮', type:'select', options:['通勤','入寮'] },
+      { id:'nationalityType', label:'日本国籍or日本国籍以外', type:'select', options:['日本国籍','日本国籍以外'] },
+      { id:'nationality', label:'国籍', optional:true, hint:'※日本国籍以外の場合のみ' },
+      { id:'visa', label:'ビザ', optional:true, hint:'※日本国籍以外の場合のみ' },
+      { id:'remarks', label:'備考', optional:true },
+      { id:'fee', label:'フィー', note:'例）300,000　※30万は✖' },
+      { id:'staff', label:'担当（フルネーム）' },
+    ],
+    generate: v => `依頼お願いいたします。\n【日総工産様】\n\n推薦日：${v.date}\nお仕事No：${v.jobno}\n勤務先名：${v.workplace}\n氏名：${v.name}\nフリガナ（半角）：${v.furigana}\n生年月日：${v.birth}\n性別：${v.gender}\n電話番号（ハイフンなし）：${v.tel}\nメールアドレス：${v.mail}\n〒(ハイフンなし)：${v.zip}\n住所：${v.address}\n通勤or入寮：${v.commute}\n日本国籍or日本国籍以外：${v.nationalityType}\n\n＜日本国籍以外の場合＞\n国籍：${v.nationality}\nビザ：${v.visa}\n\n備考：${v.remarks}\nフィー：${v.fee}\n担当（フルネーム）：${v.staff}`
+  },
+  TKG: {
+    label: 'TKG',
+    badge: ['※推薦前の照合必須', '【必要な書類】指定Excel'],
+    sample: { label: '見本を見る（指定Excelの記入例）', url: 'TKG.pdf' },
+    fields: [
+      { id:'date', label:'推薦日', type:'date' },
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'gender', label:'性別', type:'select', options:['男性','女性'] },
+      { id:'address', label:'現在の住所' },
+      { id:'tel', label:'電話番号' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'anken', label:'ご希望案件' },
+      { id:'fee', label:'フィー', note:'例）300,000　※30万は✖' },
+      { id:'staff', label:'担当' },
+    ],
+    generate: v => `依頼お願いいたします。\n【高木工業様】\n■推薦日：${v.date}\n■氏名：${v.name}\n■フリガナ：${v.furigana}\n■性別：${v.gender}\n■現在の住所：${v.address}\n■電話番号：${v.tel}\n■生年月日：${v.birth}\n■ご希望案件：${v.anken}\nフィー：${v.fee}\n担当：${v.staff}`
+  },
+  WT: {
+    label: 'WT',
+    fields: [
+      { id:'name', label:'名前', placeholder:'例）山田　太郎' },
+      { id:'furigana', label:'フリガナ' },
+      { id:'birthText', label:'生年月日', placeholder:'例）1990年1月1日' },
+      { id:'age', label:'年齢', placeholder:'例）30' },
+      { id:'gender', label:'性別', type:'select', options:['男','女'] },
+      { id:'contactAddress', label:'アドレス', hint:'※基本ケータイ。PCの場合は「PC」と記入' },
+      { id:'zip', label:'郵便番号', hint:'※必須' },
+      { id:'address', label:'住所', placeholder:'都道府県～部屋番号まで記入' },
+      { id:'tel', label:'電話番号' },
+      { id:'jobNo', label:'お仕事No', hint:'※A列記入' },
+      { id:'company', label:'企業名', hint:'※H列記入' },
+      { id:'dorm', label:'入寮・通勤', type:'select', options:['入寮','通勤'] },
+      { id:'illness', label:'持病' },
+      { id:'tattoo', label:'タトゥー', hint:'※有の場合はサイズ・箇所・個数を記入' },
+      { id:'height', label:'身長', placeholder:'例）170' },
+      { id:'weight', label:'体重', placeholder:'例）60' },
+      { id:'footSize', label:'足サイズ', placeholder:'例）26' },
+      { id:'workwearSize', label:'作業服サイズ', hint:'※S～で記入' },
+      { id:'visionRight', label:'視力（右）', placeholder:'例）1.0' },
+      { id:'visionLeft', label:'視力（左）', placeholder:'例）1.0' },
+      { id:'visionType', label:'視力の種類', placeholder:'例）裸眼／メガネ' },
+      { id:'factoryExperience', label:'工場経験', type:'select', options:['有','無'] },
+      { id:'factoryExperienceDetail', label:'工場経験の詳細', optional:true, hint:'※できれば詳しく記入すると◎' },
+      { id:'nationality', label:'国籍', hint:'※必ず確認' },
+      { id:'idType', label:'身分証明証', placeholder:'例）免許証' },
+      { id:'emergencyContact', label:'緊急連絡先', placeholder:'例）母親、兄弟／可能であれば連絡先も記入' },
+      { id:'startTiming', label:'就業時期', placeholder:'例）即日可能 or 〇月〇日' },
+      { id:'interview1', label:'面接希望日 第一候補', placeholder:'例）〇月〇日 午前中' },
+      { id:'interview2', label:'面接希望日 第二候補', placeholder:'例）〇月〇日 終日' },
+      { id:'interview3', label:'面接希望日 第三候補', optional:true },
+      { id:'preVerified', label:'事前照合', type:'select', options:['照合済み','未照合'] },
+      { id:'personProfile', label:'人物像コメント', placeholder:'例）男性単身での通勤、就業をご希望されております。' },
+      { id:'commuteMethod', label:'通勤手段', placeholder:'例）自動車、バイクなど' },
+      { id:'dormVehicle', label:'自動車・バイクの持込', type:'select', options:['はい','いいえ'], optional:true, hint:'※入寮希望の場合のみ' },
+      { id:'dormType', label:'入寮タイプ', type:'select', options:['①単身入寮','②カップル','③家族'], optional:true, hint:'※入寮希望の場合のみ', note:'※②③の場合はLINEで紹介前事前確認もいただければ幸いです。' },
+      { id:'familyComposition', label:'家族構成', optional:true, hint:'※③家族の場合のみ' },
+      { id:'dormDays', label:'入寮までの希望日数', optional:true, hint:'※入寮希望の場合のみ' },
+      { id:'fee', label:'紹介料', note:'例）300,000　※30万は✖' },
+      { id:'staff', label:'担当', hint:'※フルネーム' },
+    ],
+    generate: v => {
+      const preVerifiedLine = v.preVerified === '照合済み' ? '事前照合確認済みの方になります。\n' : '';
+      const factoryDetail = v.factoryExperienceDetail ? `（${v.factoryExperienceDetail}）` : '';
+      const familyDetail = v.familyComposition ? `　${v.familyComposition}` : '';
+      return `ウィルテック様\n推薦お願いいたします。\n・名前：${v.name}\n・フリガナ：${v.furigana}\n・生年月日：${v.birthText}\n・年齢：${v.age}歳\n・性別：${v.gender}\n・アドレス：${v.contactAddress}\n・郵便番号：${v.zip}\n・住　所：${v.address}\n・電話番号：${v.tel}\nお仕事No：${v.jobNo}\n企業名：${v.company}\n・入寮・通勤：${v.dorm}\n・持病：${v.illness}\n・タトゥー：${v.tattoo}\n・身長：${v.height}cm\n・体重：${v.weight}kg\n・足サイズ：${v.footSize}cm\n・作業服サイズ：${v.workwearSize}\n・視力：右${v.visionRight} 左${v.visionLeft}（${v.visionType}）\n・工場経験：${v.factoryExperience}${factoryDetail}\n・国籍：${v.nationality}\n・身分証明証：${v.idType}\n・緊急連絡先：${v.emergencyContact}\n・就業時期：${v.startTiming}\n面接希望日\n第一候補：${v.interview1}\n第二候補：${v.interview2}\n第三候補：${v.interview3}\n【備考・人物像】\n${preVerifiedLine}${v.personProfile}\n・通勤手段：${v.commuteMethod}\n〈入寮希望の場合〉\n・自動車・バイクの持込あるか：${v.dormVehicle}\n・①単身入寮②カップル③家族(家族の場合家族構成)：${v.dormType}${familyDetail}\n※②③の場合はLINEで紹介前事前確認もいただければ幸いです。\n・入寮までの希望日数：${v.dormDays}\n条件面をお話しした上で${v.jobNo}/${v.company} に ${v.name}様をご案内しております。\nご紹介のほど宜しくお願い致します。\n紹介料：${v.fee}\n担当：${v.staff}`;
+    }
+  },
+  TS: {
+    label: 'TS',
+    fields: [
+      { id:'date', label:'推薦日', type:'date' },
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'ふりがな', placeholder:'例）やまだ　たろう', hint:'※ひらがな' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'gender', label:'性別', type:'select', options:['男性','女性'] },
+      { id:'zip', label:'郵便番号', hint:'※ハイフンなし' },
+      { id:'address', label:'住所' },
+      { id:'mobile', label:'携帯番号', hint:'※ハイフンなし' },
+      { id:'mail', label:'メールアドレス' },
+      { id:'factory', label:'推薦先の工場名' },
+      { id:'height', label:'身長' },
+      { id:'weight', label:'体重' },
+      { id:'visionRight', label:'視力（右）' },
+      { id:'visionLeft', label:'視力（左）' },
+      { id:'workwearSize', label:'作業着サイズ' },
+      { id:'shoeSize', label:'靴' },
+      { id:'tattoo', label:'刺青タトゥー' },
+      { id:'medicalHistory', label:'持病' },
+      { id:'dormOrCommute', label:'入寮or通勤', type:'select', options:['入寮','通勤'] },
+      { id:'startDate', label:'就業開始時期' },
+      { id:'factoryExperience', label:'工場経験', type:'select', options:['有','無'] },
+      { id:'remarks', label:'その他特記事項', optional:true, note:'※求職者様のPRしたい内容や資格・経験、必須案件を希望の場合など補足があれば入力ください' },
+      { id:'fee', label:'フィー', note:'例）300,000　※30万は✖' },
+      { id:'staff', label:'担当' },
+    ],
+    generate: v => `依頼お願いいたします。\n【テクノスマイル様】\n■推薦日：${v.date}\n■氏名：${v.name}\n■ふりがな：${v.furigana}\n■生年月日：${v.birth}\n■性別：${v.gender}\n■郵便番号：${v.zip}\n■住所：${v.address}\n■携帯番号：${v.mobile}\n■メールアドレス：${v.mail}\n■推薦先の工場名：${v.factory}\n■RACONNEへの同意：有\n・身長：${v.height}\n・体重：${v.weight}\n・視力(裸眼・眼鏡・コンタクト)：右${v.visionRight}/左${v.visionLeft}\n・作業着サイズ：${v.workwearSize}\n・靴：${v.shoeSize}\n・刺青タトゥー：${v.tattoo}\n・持病：${v.medicalHistory}\n・入寮or通勤：${v.dormOrCommute}\n・就業開始時期：${v.startDate}\n・工場経験：${v.factoryExperience}\n・その他特記事項：${v.remarks}\nフィー：${v.fee}\n担当：${v.staff}`
+  },
+  '東洋ワーク': {
+    label: '東洋ワーク',
+    badge: ['※推薦前の照合必須', '【必要な書類】人物紹介チェックシートPDF'],
+    sample: { label: '見本を見る（人物紹介チェックシートの記入例）', url: 'toyo-work.pdf' },
+    fields: [
+      { id:'date', label:'推薦日', type:'date' },
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'ふりがな', placeholder:'例）やまだ　たろう', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'gender', label:'性別', type:'select', options:['男性','女性'] },
+      { id:'zip', label:'郵便番号', hint:'※ハイフンなし' },
+      { id:'address', label:'住所' },
+      { id:'tel', label:'電話番号', hint:'※ハイフンなし' },
+      { id:'mail', label:'メールアドレス' },
+      { id:'jobNo', label:'推薦先の仕事番号' },
+      { id:'baseName', label:'拠点名（A列）' },
+      { id:'startDate', label:'就業可能時期' },
+      { id:'illness', label:'病気の有無', type:'select', options:['有','無'] },
+      { id:'commuteOrDorm', label:'通勤or入寮', type:'select', options:['通勤','入寮'] },
+      { id:'factoryExperience', label:'工場経験有無', type:'select', options:['有','無'] },
+      { id:'tattoo', label:'タトゥの有無', type:'select', options:['有','無'] },
+      { id:'idProof', label:'身分証明書' },
+      { id:'interview1', label:'面接希望日時①', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+      { id:'interview2', label:'面接希望日時②', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+      { id:'interview3', label:'面接希望日時③', placeholder:'例）〇月〇日　〇〇時〜〇〇時', note:'※必ず3つ提示してください' },
+      { id:'fee', label:'紹介料', note:'例）300,000　※30万は✖' },
+      { id:'staff', label:'担当者名' },
+    ],
+    generate: v => `依頼お願いいたします。\n【東洋ワーク様】\n■推薦日：${v.date}\n■氏名：${v.name}\n■ふりがな：${v.furigana}\n■生年月日：${v.birth}\n■性別：${v.gender}\n■郵便番号：${v.zip}\n■住所：${v.address}\n■電話番号：${v.tel}\n■メールアドレス：${v.mail}\n\n■推薦先の仕事番号：${v.jobNo}\n■拠点名（A列）：${v.baseName}\n\n■就業可能時期：${v.startDate}\n■病気の有無：${v.illness}\n■通勤or入寮：${v.commuteOrDorm}\n■工場経験有無：${v.factoryExperience}\n■タトゥの有無：${v.tattoo}\n■身分証明書：${v.idProof}\n■面接希望日時(必ず3つ提示)：\n${v.interview1}\n${v.interview2}\n${v.interview3}\n\n■RACONNEへの同意：有\n\n紹介料：${v.fee}\n担当者名：${v.staff}`
+  },
+  '平山': {
+    label: '平山',
+    badge: ['※推薦前の照合必須', '【必要な書類】履歴書PDF'],
+    fields: [
+      { id:'date', label:'推薦日', type:'date' },
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'ふりがな', placeholder:'例）やまだ　たろう', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'gender', label:'性別', type:'select', options:['男性','女性'] },
+      { id:'zip', label:'郵便番号', hint:'※ハイフンなし' },
+      { id:'address', label:'住所' },
+      { id:'tel', label:'電話番号', hint:'※ハイフンなし' },
+      { id:'mail', label:'メールアドレス' },
+      { id:'jobNo', label:'推薦先の仕事番号' },
+      { id:'baseName', label:'拠点名（A列）' },
+      { id:'startDate', label:'就業可能時期' },
+      { id:'illness', label:'病気の有無', type:'select', options:['有','無'] },
+      { id:'commuteOrDorm', label:'通勤or入寮', type:'select', options:['通勤','入寮'] },
+      { id:'factoryExperience', label:'工場経験有無', type:'select', options:['有','無'] },
+      { id:'tattoo', label:'タトゥの有無', type:'select', options:['有','無'] },
+      { id:'idProof', label:'身分証明書' },
+      { id:'interview1', label:'面接希望日時①', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+      { id:'interview2', label:'面接希望日時②', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+      { id:'interview3', label:'面接希望日時③', placeholder:'例）〇月〇日　〇〇時〜〇〇時', note:'※必ず3つ提示してください' },
+      { id:'fee', label:'紹介料', note:'例）300,000　※30万は✖' },
+      { id:'staff', label:'担当者名' },
+    ],
+    generate: v => `依頼お願いいたします。\n【平山様】\n■推薦日：${v.date}\n■氏名：${v.name}\n■ふりがな：${v.furigana}\n■生年月日：${v.birth}\n■性別：${v.gender}\n■郵便番号：${v.zip}\n■住所：${v.address}\n■電話番号：${v.tel}\n■メールアドレス：${v.mail}\n\n■推薦先の仕事番号：${v.jobNo}\n■拠点名（A列）：${v.baseName}\n\n■就業可能時期：${v.startDate}\n■病気の有無：${v.illness}\n■通勤or入寮：${v.commuteOrDorm}\n■工場経験有無：${v.factoryExperience}\n■タトゥの有無：${v.tattoo}\n■身分証明書：${v.idProof}\n■面接希望日時(必ず3つ提示)：\n${v.interview1}\n${v.interview2}\n${v.interview3}\n\n■RACONNEへの同意：有\n\n紹介料：${v.fee}\n担当者名：${v.staff}`
+  },
+  '新日本': {
+    label: '新日本',
+    badge: ['※推薦前の照合必須', '【必要な書類】指定Excel'],
+    sample: { label: '見本を見る（指定Excelの記入例）', url: 'shin-nihon.pdf' },
+    fields: [
+      { id:'date', label:'推薦日', type:'date' },
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'gender', label:'性別', type:'select', options:['男性','女性'] },
+      { id:'address', label:'現在の住所', note:'最後（部屋番号など）まで記載' },
+      { id:'tel', label:'電話番号', hint:'※ハイフンなし' },
+      { id:'jobNo', label:'推薦先の仕事番号' },
+      { id:'fee', label:'フィー', note:'例）300,000　※30万は✖' },
+      { id:'staff', label:'担当' },
+    ],
+    generate: v => `依頼お願いいたします。\n【新日本様】\n■推薦日：${v.date}\n■氏名：${v.name}\n■フリガナ：${v.furigana}\n■性別：${v.gender}\n■現在の住所：${v.address}\n■電話番号：${v.tel}\n■推薦先の仕事番号：${v.jobNo}\nフィー：${v.fee}\n担当：${v.staff}`
+  },
+  AIM: {
+    label: 'AIM',
+    badge: '※推薦前の照合必須',
+    fields: [
+      { id:'date', label:'推薦年月日', type:'date' },
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'gender', label:'性別', type:'select', options:['男性','女性'] },
+      { id:'birth', label:'生年月日（西暦）', placeholder:'例）1987/02/16' },
+      { id:'age', label:'年齢' },
+      { id:'tel', label:'電話番号', hint:'※ハイフンあり' },
+      { id:'mail', label:'メールアドレス' },
+      { id:'zip', label:'郵便番号' },
+      { id:'address', label:'住所' },
+      { id:'jobInfo', label:'お仕事NO/工場名' },
+      { id:'buUnit', label:'bu / ユニット' },
+      { id:'commuteOrDorm', label:'通勤・入寮', type:'select', options:['通勤','入寮'] },
+      { id:'workwearSize', label:'作業服サイズ', note:'S～4L' },
+      { id:'shoeSize', label:'靴のサイズ' },
+      { id:'visionLeft', label:'視力（矯正）左' },
+      { id:'visionRight', label:'視力（矯正）右' },
+      { id:'factoryExperience', label:'工場経験有無', type:'select', options:['有','無'] },
+      { id:'immediateStart', label:'即就業可否', type:'select', options:['可','否'] },
+      { id:'startDate', label:'就業希望日' },
+      { id:'remarks', label:'特記事項（既往歴・国籍）', optional:true },
+      { id:'interview1', label:'面接希望日 第一候補', placeholder:'例）〇月〇日　午前中' },
+      { id:'interview2', label:'面接希望日 第二候補', placeholder:'例）〇月〇日　終日' },
+      { id:'interview3', label:'面接希望日 第三候補', note:'※確実に対応できる日時を記入してください' },
+      { id:'fee', label:'単価', note:'例）300,000　※30万は✖' },
+      { id:'staff', label:'担当者' },
+    ],
+    generate: v => `お世話になっております。\n推薦お願いします。\nUT エイム宛\n\n推薦年月日：${v.date}\n氏名：${v.name}\nフリガナ：${v.furigana}\n性別:${v.gender}\n生年月日（西暦)：${v.birth}\n年齢：${v.age}\n電話番号（ハイフンあり）：${v.tel}\nメールアドレス：${v.mail}\n郵便番号：${v.zip}\n住所：${v.address}\nお仕事NO/工場名：${v.jobInfo}\nbu / ユニット：${v.buUnit}\n通勤・入寮：${v.commuteOrDorm}\n作業服サイズ（S～４L）：${v.workwearSize}\n靴のサイズ：${v.shoeSize}\n視力（矯正）：\n左${v.visionLeft}　右${v.visionRight}\n工場経験有無：${v.factoryExperience}\n即就業可否：${v.immediateStart}\n就業希望日：${v.startDate}\n特記事項（既住所・国籍）：${v.remarks}\n面接希望日　　←確実に対応できる日時を記入してください\n第一候補:${v.interview1}\n第二候補:${v.interview2}\n第三候補:${v.interview3}\n\n単価：${v.fee}\n担当者：${v.staff}`
+  },
+  'テクノサービス（推薦）': {
+    label: 'テクノサービス',
+    badge: '【必要な書類】履歴書PDF・職務経歴書PDF',
+    fields: [
+      { id:'date', label:'推薦日', type:'date' },
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furiganaKana', label:'氏名（カナ）', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'gender', label:'性別', type:'select', options:['男性','女性'] },
+      { id:'mail', label:'メールアドレス' },
+      { id:'zip', label:'郵便番号' },
+      { id:'address', label:'現在の住所' },
+      { id:'tel', label:'電話番号' },
+      { id:'occupation', label:'現在の職業', type:'select', options:['学生','フリーター','会社員','留学生','自営業','主婦','主夫','その他'] },
+      { id:'branchBlock', label:'支店', note:'ブロック名を記入' },
+      { id:'baseOffice', label:'拠点', note:'担当営業所を記入' },
+      { id:'ownCarCommute', label:'自家用車通勤の可否', type:'select', options:['自家用車通勤可能','自家用車通勤不可'] },
+      { id:'startDateApprox', label:'入社可能日目安', placeholder:'例）〇月1日or16日' },
+      { id:'interview1', label:'面接候補日 第一希望', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+      { id:'interview2', label:'面接候補日 第二希望', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+      { id:'interview3', label:'面接候補日 第三希望', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+      { id:'interviewFormat', label:'面談形式', type:'select', options:['WEB面談希望','対面希望'] },
+      { id:'fee', label:'フィー', note:'例）300,000　※30万は✖' },
+      { id:'staff', label:'担当' },
+    ],
+    generate: v => `【必要な書類】\n・履歴書PDF\n・職務経歴書PDF\n\n▼テクノサービス\n・推薦日：${v.date}\n・氏名：${v.name}\n・氏名（カナ）：${v.furiganaKana}\n・生年月日：${v.birth}\n・性別：${v.gender}\n・メールアドレス：${v.mail}\n・現在の住所：　〒${v.zip}　${v.address}\n・電話番号：${v.tel}\n・現在の職業：${v.occupation}\n・支店：${v.branchBlock}\n・拠点：${v.baseOffice}\n・応募経路：紹介会社\n・自家用車通勤の可否：${v.ownCarCommute}\n・入社日可能日目安：${v.startDateApprox}\n\n【面接候補日】\n　第一希望：${v.interview1}\n　第二希望：${v.interview2}\n　第三希望：${v.interview3}\n　面談形式：${v.interviewFormat}\n\n・フィー：${v.fee}\n・担当：${v.staff}`
+  },
+};
+const lineOrder = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','AIM','東洋ワーク','平山','新日本','テクノサービス（推薦）'];
+
+initTool('identity', companies, identityOrder, true);
+initTool('job', jobCompanies, jobOrder, true);
+initTool('progress', progressCompanies, progressOrder, true);
+initTool('line', lineCompanies, lineOrder);
+
+// tabs
+document.getElementById('tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab');
+  if (!btn) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+  document.getElementById('tab-' + btn.dataset.tab).style.display = 'block';
+});
+</script>
+</body>
+</html>
