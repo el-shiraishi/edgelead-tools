@@ -439,12 +439,22 @@ const jobFields = [
   { id:'name', label:'案件名' },
   { id:'content', label:'質問内容' },
 ];
-const jobCompanyKeys = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','AIM','東洋ワーク','平山','新日本'];
+const jobCompanyKeys = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','AIM','東洋ワーク','新日本'];
 const jobCompanies = {};
 jobCompanyKeys.forEach(key => {
   jobCompanies[key] = { label: key, fields: jobFields, generate: jobTemplate };
 });
-const jobOrder = jobCompanyKeys;
+jobCompanies['平山'] = {
+  label: '平山',
+  fields: [
+    { id:'base', label:'拠点' },
+    { id:'anken', label:'案件NO' },
+    { id:'name', label:'案件名' },
+    { id:'content', label:'質問内容' },
+  ],
+  generate: v => `お世話になっております。\n下記案件について質問です。\n\n拠点：${v.base}\n案件NO：${v.anken}\n案件名：${v.name}\n質問内容：${v.content}`
+};
+const jobOrder = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','AIM','東洋ワーク','平山','新日本'];
 
 /* ---------------------------------------------------------
    汎用ツール初期化：company一覧 + 生成ロジックを
@@ -628,11 +638,22 @@ const progressCommonFields = [
   { id:'factory', label:'紹介先工場名' },
   { id:'status', label:'現状' },
 ];
-const progressCommonKeys = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','東洋ワーク','平山','新日本'];
+const progressCommonKeys = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','東洋ワーク','新日本'];
 const progressCompanies = {};
 progressCommonKeys.forEach(key => {
   progressCompanies[key] = { label: key, fields: progressCommonFields, generate: progressCommonTemplate };
 });
+progressCompanies['平山'] = {
+  label: '平山',
+  fields: [
+    { id:'base', label:'拠点' },
+    { id:'date', label:'紹介(推薦日)' },
+    { id:'name', label:'求職者名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+    { id:'factory', label:'紹介先工場名' },
+    { id:'status', label:'現状' },
+  ],
+  generate: v => `お世話になります。\n下記求職者様についてご確認となります。\n\n・拠点：${v.base}\n・紹介(推薦日)：${v.date}\n・求職者名：${v.name}\n・紹介先工場名：${v.factory}\n・現状：${v.status}\n\n最新の進捗お伺いできますでしょうか。\nよろしくお願いいたします。`
+};
 progressCompanies['テクノサービス'] = {
   label: 'テクノサービス',
   fields: [
@@ -1055,8 +1076,9 @@ const lineCompanies = {
       { id:'weight', label:'体重' },
       { id:'bmi', label:'BMI', note:'※身長をメートルに換算(例：160cm→1.6m)' },
       { id:'shoeSize', label:'靴のサイズ' },
-      { id:'visionLeft', label:'視力（矯正）左' },
-      { id:'visionRight', label:'視力（矯正）右' },
+      { id:'visionType', label:'視力(裸眼orメガネorコンタクトor老眼)', type:'select', options:['裸眼','メガネ','コンタクト','老眼'] },
+      { id:'visionRight', label:'視力（右）' },
+      { id:'visionLeft', label:'視力（左）' },
       { id:'factoryExperience', label:'工場経験有無', type:'select', options:['有','無'] },
       { id:'immediateStart', label:'即就業可否', type:'select', options:['可','否'] },
       { id:'startDate', label:'就業希望日' },
@@ -1067,7 +1089,7 @@ const lineCompanies = {
       { id:'fee', label:'単価', note:'例）300,000　※30万は✖' },
       { id:'staff', label:'担当者' },
     ],
-    generate: v => `お世話になっております。\n推薦お願いします。\nUT エイム宛\n\n推薦年月日：${v.date}\n氏名：${v.name}\nフリガナ：${v.furigana}\n性別:${v.gender}\n生年月日（西暦)：${v.birth}\n年齢：${v.age}\n電話番号（ハイフンあり）：${v.tel}\nメールアドレス：${v.mail}\n郵便番号：${v.zip}\n住所：${v.address}\nお仕事NO/工場名：${v.jobInfo}\nbu / ユニット：${v.buUnit}\n通勤・入寮：${v.commuteOrDorm}\n作業服サイズ（S～４L）：${v.workwearSize}\n身長：${v.height}\n体重：${v.weight}\nBMI：${v.bmi}\n靴のサイズ：${v.shoeSize}\n視力（矯正）：\n左${v.visionLeft}　右${v.visionRight}\n工場経験有無：${v.factoryExperience}\n即就業可否：${v.immediateStart}\n就業希望日：${v.startDate}\n特記事項（既住所・国籍）：${v.remarks}\n面接希望日　　←確実に対応できる日時を記入してください\n第一候補:${v.interview1}\n第二候補:${v.interview2}\n第三候補:${v.interview3}\n\n単価：${v.fee}\n担当者：${v.staff}`
+    generate: v => `お世話になっております。\n推薦お願いします。\nUT エイム宛\n\n推薦年月日：${v.date}\n氏名：${v.name}\nフリガナ：${v.furigana}\n性別:${v.gender}\n生年月日（西暦)：${v.birth}\n年齢：${v.age}\n電話番号（ハイフンあり）：${v.tel}\nメールアドレス：${v.mail}\n郵便番号：${v.zip}\n住所：${v.address}\nお仕事NO/工場名：${v.jobInfo}\nbu / ユニット：${v.buUnit}\n通勤・入寮：${v.commuteOrDorm}\n作業服サイズ（S～４L）：${v.workwearSize}\n身長：${v.height}\n体重：${v.weight}\nBMI：${v.bmi}\n靴のサイズ：${v.shoeSize}\n視力(裸眼orメガネorコンタクトor老眼)：${v.visionType}\n視力：\n右→${v.visionRight}\n左→${v.visionLeft}\n工場経験有無：${v.factoryExperience}\n即就業可否：${v.immediateStart}\n就業希望日：${v.startDate}\n特記事項（既住所・国籍）：${v.remarks}\n面接希望日　　←確実に対応できる日時を記入してください\n第一候補:${v.interview1}\n第二候補:${v.interview2}\n第三候補:${v.interview3}\n\n単価：${v.fee}\n担当者：${v.staff}`
   },
   'テクノサービス（推薦）': {
     label: 'テクノサービス',
