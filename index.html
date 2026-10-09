@@ -457,6 +457,7 @@ const companies = {
     label: '平山',
     badge: '※推薦前の照合必須',
     fields: [
+      { id:'area', label:'エリア', type:'select', options:['東日本','中日本','西日本'] },
       { id:'base', label:'拠点' },
       { id:'name', label:'名前', placeholder:'例）山田　太郎', hint:'※全角スペース' },
       { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
@@ -464,7 +465,7 @@ const companies = {
       { id:'tel', label:'電話番号' },
       { id:'factoryjob', label:'希望工場名/求人No' },
     ],
-    generate: v => `お世話になっております。\n照合お願いします。\n\n拠点：${v.base}\n\n・名前：${v.name}\n・フリガナ：${v.furigana}\n・生年月日：${v.birth}\n・電話番号：${v.tel}\n・希望工場名/求人No：${v.factoryjob}\n・ラコネ上紹介料（本部で埋めます）：\n\n紹介料も相違ないでしょうか。\nご確認よろしくお願いいたします。`
+    generate: v => `お世話になっております。\n照合お願いします。\n\nエリア：${v.area}\n拠点：${v.base}\n\n・名前：${v.name}\n・フリガナ：${v.furigana}\n・生年月日：${v.birth}\n・電話番号：${v.tel}\n・希望工場名/求人No：${v.factoryjob}\n・ラコネ上紹介料（本部で埋めます）：\n\n紹介料も相違ないでしょうか。\nご確認よろしくお願いいたします。`
   },
   '新日本': {
     label: '新日本',
@@ -508,12 +509,13 @@ jobCompanyKeys.forEach(key => {
 jobCompanies['平山'] = {
   label: '平山',
   fields: [
+    { id:'area', label:'エリア', type:'select', options:['東日本','中日本','西日本'] },
     { id:'base', label:'拠点' },
     { id:'anken', label:'案件NO' },
     { id:'name', label:'案件名' },
     { id:'content', label:'質問内容' },
   ],
-  generate: v => `お世話になっております。\n下記案件について質問です。\n\n拠点：${v.base}\n案件NO：${v.anken}\n案件名：${v.name}\n質問内容：${v.content}`
+  generate: v => `お世話になっております。\n下記案件について質問です。\n\nエリア：${v.area}\n拠点：${v.base}\n案件NO：${v.anken}\n案件名：${v.name}\n質問内容：${v.content}`
 };
 const jobOrder = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','AIM','東洋ワーク','平山','新日本'];
 
@@ -743,13 +745,14 @@ progressCommonKeys.forEach(key => {
 progressCompanies['平山'] = {
   label: '平山',
   fields: [
+    { id:'area', label:'エリア', type:'select', options:['東日本','中日本','西日本'] },
     { id:'base', label:'拠点' },
     { id:'date', label:'紹介(推薦日)' },
     { id:'name', label:'求職者名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
     { id:'factory', label:'紹介先工場名' },
     { id:'status', label:'現状' },
   ],
-  generate: v => `お世話になります。\n下記求職者様についてご確認となります。\n\n・拠点：${v.base}\n・紹介(推薦日)：${v.date}\n・求職者名：${v.name}\n・紹介先工場名：${v.factory}\n・現状：${v.status}\n\n最新の進捗お伺いできますでしょうか。\nよろしくお願いいたします。`
+  generate: v => `お世話になります。\n下記求職者様についてご確認となります。\n\n・エリア：${v.area}\n・拠点：${v.base}\n・紹介(推薦日)：${v.date}\n・求職者名：${v.name}\n・紹介先工場名：${v.factory}\n・現状：${v.status}\n\n最新の進捗お伺いできますでしょうか。\nよろしくお願いいたします。`
 };
 progressCompanies['テクノサービス'] = {
   label: 'テクノサービス',
