@@ -1080,8 +1080,7 @@ const lineCompanies = {
   },
   '東洋ワーク': {
     label: '東洋ワーク',
-    badge: ['※推薦前の照合必須', '【必要な書類】人物紹介チェックシートPDF'],
-    sample: { label: '見本を見る（人物紹介チェックシートの記入例）', url: 'toyo-work.pdf' },
+    badge: '※推薦前の照合必須',
     fields: [
       { id:'date', label:'推薦日', type:'date' },
       { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
@@ -1103,10 +1102,20 @@ const lineCompanies = {
       { id:'interview1', label:'面接希望日時①', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
       { id:'interview2', label:'面接希望日時②', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
       { id:'interview3', label:'面接希望日時③', placeholder:'例）〇月〇日　〇〇時〜〇〇時', note:'※必ず3つ提示してください' },
+      { id:'history', label:'1. 既往歴', note:'てんかん・ヘルニア・腰痛・糖尿病などがある場合に記載', optional:true },
+      { id:'remarks', label:'2. その他特記事項', note:'注記、ご希望など', optional:true },
+      { id:'chk3', label:'3. 給与受取のための金融機関口座がある', type:'select', options:['はい','いいえ'] },
+      { id:'chk4', label:'4. マイナンバーを確認できる書類と、有効な身分証明書がある', type:'select', options:['はい','いいえ'] },
+      { id:'chk5', label:'5. 身元保証人がいる', type:'select', options:['はい','いいえ'] },
+      { id:'chk6', label:'6. 今後1カ月程度は携帯電話が止まる心配はない', type:'select', options:['はい','いいえ'] },
+      { id:'chk7', label:'7. 面談時や見学時に、虚偽の申告をしない旨を伝えた', type:'select', options:['はい','いいえ'] },
+      { id:'chk8', label:'8. 応募者に関する権利保護期間は、基本契約書または紹介手数料に関する覚書の通りであることを了承した', type:'select', options:['はい','いいえ'] },
+      { id:'chk9', label:'9. 職業安定法指針に基づき、就業日から2年間、転職を勧める連絡、お祝い金やそれに類する金銭等の提供禁止を了承した', type:'select', options:['はい','いいえ'] },
+      { id:'chk10', label:'10. 【外国籍の場合】在留カード（永住者・永住者の配偶者等）の有効性が確認されており、今回の派遣就労が適法であることを確約する', type:'select', options:['はい','いいえ'] },
       { id:'fee', label:'紹介料', note:'例）300,000　※30万は✖' },
       { id:'staff', label:'担当者名' },
     ],
-    generate: v => `依頼お願いいたします。\n【東洋ワーク様】\n■推薦日：${v.date}\n■氏名：${v.name}\n■ふりがな：${v.furigana}\n■生年月日：${v.birth}\n■性別：${v.gender}\n■郵便番号：${v.zip}\n■住所：${v.address}\n■電話番号：${v.tel}\n■メールアドレス：${v.mail}\n\n■推薦先の仕事番号：${v.jobNo}\n■拠点名（A列）：${v.baseName}\n\n■就業可能時期：${v.startDate}\n■病気の有無：${v.illness}\n■通勤or入寮：${v.commuteOrDorm}\n■工場経験有無：${v.factoryExperience}\n■タトゥの有無：${v.tattoo}\n■身分証明書：${v.idProof}\n■面接希望日時(必ず3つ提示)：\n${v.interview1}\n${v.interview2}\n${v.interview3}\n\n■RACONNEへの同意：有\n\n紹介料：${v.fee}\n担当者名：${v.staff}`
+    generate: v => `依頼お願いいたします。\n【東洋ワーク様】\n■推薦日：${v.date}\n■氏名：${v.name}\n■ふりがな：${v.furigana}\n■生年月日：${v.birth}\n■性別：${v.gender}\n■郵便番号：${v.zip}\n■住所：${v.address}\n■電話番号：${v.tel}\n■メールアドレス：${v.mail}\n\n■推薦先の仕事番号：${v.jobNo}\n■拠点名（A列）：${v.baseName}\n\n■就業可能時期：${v.startDate}\n■病気の有無：${v.illness}\n■通勤or入寮：${v.commuteOrDorm}\n■工場経験有無：${v.factoryExperience}\n■タトゥの有無：${v.tattoo}\n■身分証明書：${v.idProof}\n■面接希望日時(必ず3つ提示)：\n${v.interview1}\n${v.interview2}\n${v.interview3}\n\n■RACONNEへの同意：有\n\n■該当するものがある場合に記載をお願いします。\n1. 既往歴（てんかん・ヘルニア・腰痛・糖尿病などがある場合に記載）：${v.history}\n2. その他特記事項（注記、ご希望など）：${v.remarks}\n\n■応募者に確認の上、以下をチェックをしてください。\n3. 給与受取のための金融機関口座がある。：${v.chk3}\n4.マイナンバーを確認できる書類と、有効な身分証明書がある。：${v.chk4}\n5.身元保証人がいる。：${v.chk5}\n6.今後1カ月程度は携帯電話が止まる心配はない。：${v.chk6}\n7.面談時や見学時に、虚偽の申告をしない旨を伝えた。：${v.chk7}\n8.応募者に関する権利保護期間は、基本契約書または紹介手数料に関する覚書の通りであることを了承した。：${v.chk8}\n9.職業安定法指針に基づき、就業日から2年間、転職を勧める連絡、お祝い金やそれに類する金銭等の提供禁止を了承した。：${v.chk9}\n\n■応募者が外国籍人材の場合、以下をチェックしてください。\n10.在留カード（永住者・永住者の配偶者等）の有効性が確認されており、今回の派遣就労が適法であることを確約する。：${v.chk10}\n\n紹介料：${v.fee}\n担当者名：${v.staff}`
   },
   '平山': {
     label: '平山',
