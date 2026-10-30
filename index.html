@@ -228,6 +228,11 @@
   .flow-branch-title{ font-size:12px; font-weight:700; color:var(--ink-soft); margin-bottom:6px; }
   .flow-branch .flow-card{ margin-bottom:6px; }
   .flow-extra{ border:1px dashed #b6bec8; border-radius:10px; padding:9px 12px; background:#fafbfc; }
+
+  .area-ref{ margin:0 0 16px; border:1px solid var(--line); border-radius:10px; background:#f7f9fa; }
+  .area-ref summary{ cursor:pointer; padding:8px 12px; font-size:13px; font-weight:700; color:var(--accent-ink); }
+  .area-ref-group{ padding:6px 12px 8px; border-top:1px solid var(--line); font-size:12.5px; line-height:1.7; }
+  .area-ref-title{ font-weight:700; margin-bottom:1px; }
 </style>
 </head>
 <body>
@@ -351,6 +356,21 @@ const companies = {
       { id:'mail', label:'メールアドレス', hint:'※任意' },
     ],
     generate: v => `お世話になっております。\n照合お願いします。\n\n担当者名：${v.tantou}\n\n氏名：${v.name}\nフリガナ：${v.furigana}\n生年月日：${v.birth}\n電話番号：${v.tel}\nメールアドレス：${v.mail}`
+  },
+  'NT（関東1）': {
+    label: 'NT（関東1）',
+    fields: [
+      { id:'name', label:'氏名', placeholder:'例）山田　太郎', hint:'※全角スペース' },
+      { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダ　タロウ', hint:'※全角スペース' },
+      { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
+      { id:'tel', label:'電話番号' },
+      { id:'anken', label:'案件NO' },
+      { id:'ankenName', label:'案件名' },
+      { id:'interview1', label:'面接候補日①', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+      { id:'interview2', label:'面接候補日②', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+      { id:'interview3', label:'面接候補日③', placeholder:'例）〇月〇日　〇〇時〜〇〇時' },
+    ],
+    generate: v => `お世話になっております。\n照合お願いします。\n\nエリア：関東１\n\n氏名：${v.name}\nフリガナ：${v.furigana}\n生年月日：${v.birth}\n電話番号：${v.tel}\n案件NO：${v.anken}\n案件名：${v.ankenName}\n面接候補日①：${v.interview1}\n面接候補日②：${v.interview2}\n面接候補日③：${v.interview3}`
   },
   WIC: {
     label: 'WIC',
@@ -490,11 +510,33 @@ const companies = {
   },
 };
 
-const identityOrder = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','AIM','東洋ワーク','平山','新日本','テクノサービス'];
+const identityOrder = ['NT','NT（関東1）','WIC','BN','CO/COH','NK','TKG','WT','TS','AIM','東洋ワーク','平山','新日本','テクノサービス'];
 
 /* ---------------------------------------------------------
    案件確認：全社共通テンプレート
 --------------------------------------------------------- */
+const AREA_REF = [
+  { name:'東日本エリア', lines:[
+    '北海道、青森、秋田、岩手',
+    '宮城、山形、福島',
+    '新潟、栃木、茨城、群馬、埼玉、東京、千葉、神奈川、山梨、静岡',
+    '富山、石川、福井' ] },
+  { name:'中日本エリア', lines:[ '長野、岐阜、愛知、三重' ] },
+  { name:'西日本エリア', lines:[
+    '滋賀、京都、奈良、大阪、兵庫、和歌山、鳥取、岡山',
+    '香川、徳島、高知、愛媛、広島、島根、山口、大分、福岡、宮崎',
+    '熊本、佐賀、長崎、鹿児島' ] },
+];
+const BN_STAFF = {
+  '東日本エリア': '藤井様・田中様',
+  '中日本エリア': '石川様・水谷様・中尾様',
+  '西日本エリア': '岡田様・大村様・細川様',
+};
+const bnAreaFields = v => [
+  { id:'area', label:'エリア', type:'select', options:Object.keys(BN_STAFF), controlsForm:true, note:'案件表C列を確認' },
+  ...(BN_STAFF[v.area] ? [{ id:'bnStaffInfo', label:'担当者様', type:'info', note:BN_STAFF[v.area] }] : []),
+];
+const bnHead = v => `■エリア：${v.area}\n■担当者様：${BN_STAFF[v.area] || ''}\n\n`;
 const jobTemplate = v => `お世話になっております。\n下記案件について質問です。\n\n案件NO：${v.anken}\n案件名：${v.name}\n質問内容：${v.content}`;
 const jobFields = [
   { id:'anken', label:'案件NO' },
@@ -506,6 +548,8 @@ const jobCompanies = {};
 jobCompanyKeys.forEach(key => {
   jobCompanies[key] = { label: key, fields: jobFields, generate: jobTemplate };
 });
+jobCompanies['NT（関東1）'] = { label: 'NT（関東1）', fields: jobFields, generate: v => `お世話になっております。\n下記案件について質問です。\n\nエリア：関東１\n\n案件NO：${v.anken}\n案件名：${v.name}\n質問内容：${v.content}` };
+jobCompanies['BN'] = { label: 'BN', areaRef: AREA_REF, fields: v => [...bnAreaFields(v), ...jobFields], generate: v => bnHead(v) + jobTemplate(v) };
 jobCompanies['平山'] = {
   label: '平山',
   fields: [
@@ -517,7 +561,7 @@ jobCompanies['平山'] = {
   ],
   generate: v => `お世話になっております。\n下記案件について質問です。\n\nエリア：${v.area}\n拠点：${v.base}\n案件NO：${v.anken}\n案件名：${v.name}\n質問内容：${v.content}`
 };
-const jobOrder = ['NT','WIC','BN','CO/COH','NK','TKG','WT','TS','AIM','東洋ワーク','平山','新日本'];
+const jobOrder = ['NT','NT（関東1）','WIC','BN','CO/COH','NK','TKG','WT','TS','AIM','東洋ワーク','平山','新日本'];
 
 /* ---------------------------------------------------------
    汎用ツール初期化：company一覧 + 生成ロジックを
@@ -573,6 +617,30 @@ function initTool(prefix, companiesCfg, order, prependCompanyLabel, onSelect){
       a.rel = 'noopener noreferrer';
       a.textContent = '📄 ' + cfg.sample.label;
       badgeNoteEl.appendChild(a);
+    }
+
+    if (cfg.areaRef){
+      const det = document.createElement('details');
+      det.className = 'area-ref';
+      det.open = true;
+      const sum = document.createElement('summary');
+      sum.textContent = '🗾 エリア区分の参考';
+      det.appendChild(sum);
+      cfg.areaRef.forEach(g => {
+        const box = document.createElement('div');
+        box.className = 'area-ref-group';
+        const t = document.createElement('div');
+        t.className = 'area-ref-title';
+        t.textContent = g.name;
+        box.appendChild(t);
+        g.lines.forEach(l => {
+          const d = document.createElement('div');
+          d.textContent = l;
+          box.appendChild(d);
+        });
+        det.appendChild(box);
+      });
+      badgeNoteEl.appendChild(det);
     }
 
     if (!cfg.generate){
@@ -742,6 +810,7 @@ const progressCompanies = {};
 progressCommonKeys.forEach(key => {
   progressCompanies[key] = { label: key, fields: progressCommonFields, generate: progressCommonTemplate };
 });
+progressCompanies['BN'] = { label: 'BN', areaRef: AREA_REF, fields: v => [...bnAreaFields(v), ...progressCommonFields], generate: v => bnHead(v) + progressCommonTemplate(v) };
 progressCompanies['平山'] = {
   label: '平山',
   fields: [
@@ -913,9 +982,13 @@ const lineCompanies = {
   },
   BN: {
     label: 'BN',
-    badge: '【必要な書類】指定Excel',
+    areaRef: AREA_REF,
+    badge: '【必要な書類】指定Excel・履歴書',
     sample: { label: '見本を見る（指定Excelの記入例）', url: 'BN.pdf' },
-    fields: [
+    fields: v => [
+      { id:'area', label:'エリア', type:'select', options:Object.keys(BN_STAFF), controlsForm:true, note:'案件表C列を確認' },
+      ...(BN_STAFF[v.area] ? [{ id:'bnStaffInfo', label:'担当者様', type:'info', note:BN_STAFF[v.area] }] : []),
+      { id:'date', label:'推薦日', type:'date' },
       { id:'name', label:'氏名', placeholder:'例）山田　太郎' },
       { id:'furigana', label:'フリガナ', placeholder:'例）ヤマダタロウ', hint:'※カタカナ' },
       { id:'birth', label:'生年月日', placeholder:'例）1987/02/16' },
@@ -927,7 +1000,7 @@ const lineCompanies = {
       { id:'fee', label:'フィー', note:'例）300,000　※30万は✖' },
       { id:'staff', label:'担当' },
     ],
-    generate: v => `依頼お願いいたします。\n【BREXA　Next様】\n■推薦日：${v.date}\n■氏名：${v.name}\n■フリガナ：${v.furigana}\n■生年月日：${v.birth}\n■性別：${v.gender}\n■現在の住所：${v.address}\n■電話番号：${v.tel}\n■メールアドレス：${v.mail}\n■推薦先の仕事番号/工場名：${v.jobInfo}\nフィー：${v.fee}\n担当：${v.staff}`
+    generate: v => `依頼お願いいたします。\n【BREXA　Next様】\n■エリア：${v.area}\n■担当者様：${BN_STAFF[v.area] || ''}\n■推薦日：${v.date}\n■氏名：${v.name}\n■フリガナ：${v.furigana}\n■生年月日：${v.birth}\n■性別：${v.gender}\n■現在の住所：${v.address}\n■電話番号：${v.tel}\n■メールアドレス：${v.mail}\n■推薦先の仕事番号/工場名：${v.jobInfo}\nフィー：${v.fee}\n担当：${v.staff}`
   },
   'CO/COH': {
     label: 'CO/COH',
